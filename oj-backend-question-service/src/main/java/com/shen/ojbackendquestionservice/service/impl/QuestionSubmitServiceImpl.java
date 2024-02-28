@@ -18,8 +18,8 @@ import com.shen.ojbackendmodel.model.vo.QuestionSubmitVO;
 import com.shen.ojbackendquestionservice.mapper.QuestionSubmitMapper;
 import com.shen.ojbackendquestionservice.service.QuestionService;
 import com.shen.ojbackendquestionservice.service.QuestionSubmitService;
-import com.shen.ojbackendserviceclient.service.JudgeService;
-import com.shen.ojbackendserviceclient.service.UserService;
+import com.shen.ojbackendserviceclient.service.JudgeFeignClient;
+import com.shen.ojbackendserviceclient.service.UserFeignClient;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,11 +44,11 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
     private QuestionService questionService;
 
     @Resource
-    private UserService userService;
+    private UserFeignClient userFeignClient;
 
     @Resource
     @Lazy
-    private JudgeService judgeService;
+    private JudgeFeignClient judgeFeignClient;
 
     /**
      * 题目提交
@@ -88,7 +88,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         }
         Long questionSubmitId = questionSubmit.getId();
         // 执行判题服务
-        CompletableFuture.runAsync(() -> judgeService.doJudge(questionSubmitId));
+        CompletableFuture.runAsync(() -> judgeFeignClient.doJudge(questionSubmitId));
         return questionSubmitId;
     }
 
@@ -128,7 +128,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         // 脱敏：仅本人和管理员能看见自己（提交 userId 和登录用户 id 不同）提交的代码
         long userId = loginUser.getId();
         // 处理脱敏
-        if (userId != questionSubmit.getUserId() && !userService.isAdmin(loginUser)) {
+        if (userId != questionSubmit.getUserId() && !userFeignClient.isAdmin(loginUser)) {
             questionSubmitVO.setCode(null);
         }
         return questionSubmitVO;
